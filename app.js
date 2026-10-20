@@ -10,7 +10,10 @@
     // tightly around the visible icon scores roughly 0.31-0.80. At 0.5, correct tight boxes
     // would be marked as missed on several pairs; 0.3 accepts them.
     iouThreshold: 0.3,
-    shuffle: false,      // true = show pairs in a random order for each session
+    pairsPerRun: 5,      // how many pairs each run draws at random (0 = use every pair)
+    // Draw pairs in proportion to how many differences they have, so every run has the same
+    // difficulty mix (with the current 55 pairs: 2 pairs with 1 difference, 3 with 2).
+    balanceByDifficulty: true,
     showModelsAfterEachPair: true,  // show the AI models' scores and boxes after each answer
     showModelsLink: true,           // show the "See how the AI models scored" link on the start screen
     // When a player wins a trophy on a pair:
@@ -178,14 +181,49 @@
   let state = null;
   let viewing = 'you';   // whose boxes are drawn after checking: 'you' or a model index
 
-  function freshState(participant) {
-    const order = PAIRS.map((_, i) => i);
-    if (CONFIG.shuffle) {
-      for (let i = order.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [order[i], order[j]] = [order[j], order[i]];
-      }
+  function shuffled(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
+    return a;
+  }
+
+  // Pairs every model has an answer for, so trophies are always a fair fight.
+  function eligiblePairs() {
+    const all = PAIRS.map((_, i) => i);
+    const covered = all.filter((i) => MODELS.every((m) => m.pairs && Array.isArray(m.pairs[stemOf(PAIRS[i])])));
+    return covered.length ? covered : all;
+  }
+
+  function drawPairs() {
+    const pool = eligiblePairs();
+    const n = CONFIG.pairsPerRun > 0 ? Math.min(CONFIG.pairsPerRun, pool.length) : pool.length;
+    if (!CONFIG.balanceByDifficulty) return shuffled(pool).slice(0, n);
+
+    // Group by number of differences and give each group its share of the n slots
+    // (largest remainder), then draw at random inside each group.
+    const groups = new Map();
+    pool.forEach((i) => {
+      const k = PAIRS[i].differences.length;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(i);
+    });
+    const keys = [...groups.keys()].sort((a, b) => a - b);
+    const quota = keys.map((k) => (n * groups.get(k).length) / pool.length);
+    const take = quota.map(Math.floor);
+    let left = n - take.reduce((a, b) => a + b, 0);
+    quota.map((q, i) => [q - Math.floor(q), i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => {
+      if (left > 0 && take[i] < groups.get(keys[i]).length) { take[i] += 1; left -= 1; }
+    });
+    const picked = [];
+    keys.forEach((k, i) => picked.push(...shuffled(groups.get(k)).slice(0, take[i])));
+    return shuffled(picked);
+  }
+
+  function freshState(participant) {
+    const order = drawPairs();
     return {
       participant: participant || '',
       startedAt: new Date().toISOString(),
@@ -236,12 +274,15 @@
       $('start-form').hidden = true;
       return;
     }
-    $('start-count').textContent = `There are ${PAIRS.length} pairs. It takes a few minutes.`;
+    const perRun = CONFIG.pairsPerRun > 0 ? Math.min(CONFIG.pairsPerRun, eligiblePairs().length) : eligiblePairs().length;
+    $('start-count').textContent = perRun < PAIRS.length
+      ? `Each run picks ${perRun} pairs at random from ${PAIRS.length}. It takes a couple of minutes.`
+      : `There are ${PAIRS.length} pairs. It takes a few minutes.`;
     $('models-link').hidden = !(CONFIG.showModelsLink && MODELS.length);
     const saved = loadSaved();
     if (saved && !saved.finishedAt && (saved.pos > 0 || saved.marks.length || saved.checked)) {
       $('resume').hidden = false;
-      $('resume-detail').textContent = `on pair ${Math.min(saved.pos + 1, PAIRS.length)} of ${PAIRS.length}`;
+      $('resume-detail').textContent = `on pair ${Math.min(saved.pos + 1, saved.order.length)} of ${saved.order.length}`;
       $('participant').value = saved.participant || '';
     }
   }
@@ -361,6 +402,7 @@
     const count = won.filter(Boolean).length;
     $('cabinet-count').innerHTML = `<b>${count}</b> of ${won.length}`;
     fillShelf($('shelf'), won, state.pos);
+    $('shelf').style.setProperty('--slots', String(won.length <= 6 ? won.length : 4));
     $('cabinet-rule').textContent = CONFIG.trophyRule === 'any'
       ? 'Score higher than at least one AI model on a pair to win its trophy.'
       : 'Score higher than every AI model on a pair to win its trophy.';
@@ -552,7 +594,8 @@
   }
 
   function cardDetail(r) {
-    return `<span class="sc-detail">Found ${r.tp}/${r.tp + r.fn}, ${r.fp} wrong</span>` +
+    return `<span class="sc-detail">Found ${r.tp} of ${r.tp + r.fn}</span>` +
+      `<span class="sc-detail">Wrong boxes ${r.fp}</span>` +
       `<span class="sc-detail">Accuracy ${pct(r.accuracy)}</span>` +
       `<span class="sc-detail">IoU ${dec(r.meanIou)}</span>`;
   }
@@ -777,6 +820,7 @@
     if (!state.finishedAt) state.finishedAt = new Date().toISOString();
     state.pos = state.order.length;
     save();
+    $('done-title').textContent = `All ${state.order.length} pairs done`;
     const you = summarise(state.results);
     const wrongText = you.wrong_boxes === 0 ? 'and no wrong boxes' : you.wrong_boxes === 1 ? 'with 1 wrong box' : `with ${you.wrong_boxes} wrong boxes`;
     $('done-sentence').textContent = `You found ${you.found} of ${you.differences} differences, ${wrongText}.`;
@@ -796,7 +840,7 @@
   }
 
   function showModels() {
-    $('models-lede').textContent = `Scored on the ${PAIRS.length} pairs on this site, with the same rules as players.`;
+    $('models-lede').textContent = `Scored on all ${PAIRS.length} pairs on this site, with the same rules as players.`;
     renderOverallCards($('models-cards'), modelPlayers(), PAIRS);
     renderPairs($('models-pairs'), modelPlayers(), PAIRS);
     show('models');
@@ -808,10 +852,9 @@
   $('btn-restart').addEventListener('click', () => {
     const participant = state ? state.participant : '';
     clearSaved();
-    state = null;
-    $('resume').hidden = true;
-    $('participant').value = participant;
-    show('start');
+    state = freshState(participant);
+    save();
+    startPlay();
   });
 
   // ---------------------------------------------------------------------------
@@ -848,6 +891,7 @@
       started_at: state.startedAt,
       finished_at: state.finishedAt,
       iou_threshold: CONFIG.iouThreshold,
+      pairs_in_run: state.order.map((i) => stemOf(PAIRS[i])),
       box_format: '[x, y, width, height] in original image pixels',
       trophy_rule: CONFIG.trophyRule,
       summary: {

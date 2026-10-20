@@ -387,7 +387,7 @@ summary:focus-visible,
   margin: 0.875rem 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--slots, 4), 1fr);
   row-gap: 0.875rem;
 }
 .shelf li {
@@ -506,8 +506,8 @@ summary:focus-visible,
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.625rem;
   margin: 0 0 0.75rem;
 }
 .score-card {
@@ -516,8 +516,8 @@ summary:focus-visible,
   text-align: left;
   display: grid;
   align-content: start;
-  gap: 0.2rem;
-  padding: 0.875rem 1rem;
+  gap: 0.1rem;
+  padding: 0.875rem 0.875rem;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -544,7 +544,7 @@ button.score-card:disabled { cursor: default; color: var(--muted); }
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-.sc-detail { color: var(--muted); font-size: 0.9375rem; line-height: 1.4; }
+.sc-detail { color: var(--muted); font-size: 0.875rem; line-height: 1.45; white-space: nowrap; }
 .score-card.is-you .sc-score { color: var(--pen); }
 
 /* ---------- Pair-by-pair table ---------- */
@@ -605,12 +605,14 @@ button.score-card:disabled { cursor: default; color: var(--muted); }
   .controls .row .btn, .feedback .row .btn { flex: 1 1 auto; }
   .controls .spacer, .feedback-foot .spacer { display: none; }
   .cards { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .cards .is-you { grid-column: 1 / -1; }
   .score-card { padding: 0.75rem 0.75rem; }
   .sc-score { font-size: 2rem; }
   .sc-detail { font-size: 0.875rem; }
   .results-table { font-size: 0.9375rem; }
   .results-table thead th { font-size: 0.8125rem; }
   .results-table th, .results-table td { padding-right: 0.5rem; }
-  .cell-sub > span { display: block; }
-  .cell-sub > .cs-sep { display: none; }
+  /* Phones show just the scores per pair; the details are in the downloads. */
+  .results-table .cell-sub { display: none; }
+  .results-table .pair-id { font-size: 0.8125rem; }
 }
