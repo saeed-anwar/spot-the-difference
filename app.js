@@ -13,6 +13,10 @@
     shuffle: false,      // true = show pairs in a random order for each session
     showModelsAfterEachPair: true,  // show the AI models' scores and boxes after each answer
     showModelsLink: true,           // show the "See how the AI models scored" link on the start screen
+    // When a player wins a trophy on a pair:
+    //   'all' = their score is higher than every AI model's score on that pair
+    //   'any' = their score is higher than at least one AI model's score
+    trophyRule: 'all',
     minBoxSize: 2,       // boxes narrower or shorter than this (in picture pixels) are ignored
     storageKey: 'spot-the-difference:session:v1',
   };
@@ -145,6 +149,28 @@
     return result;
   }
 
+  // One number per pair: accuracy x mean IoU, out of 100.
+  const pairScore = (r) => (r ? Math.round(100 * r.accuracy * r.meanIou) : null);
+  const fmtScore = (v) => (v == null ? '–' : String(Math.round(v)));
+
+  const TROPHY_SVG = '<svg class="trophy" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M7 3h10v6a5 5 0 0 1-10 0z"/>' +
+    '<path class="handles" d="M7 5H4.6v1.6A3.4 3.4 0 0 0 8 10M17 5h2.4v1.6A3.4 3.4 0 0 1 16 10"/>' +
+    '<path d="M11 13.8h2v3.4h-2z"/>' +
+    '<rect x="7.5" y="17" width="9" height="3.4" rx="1"/></svg>';
+
+  // Did the player beat the AI models on this pair? Returns { won, best, models }.
+  function trophyFor(pair, yourResult) {
+    const mine = pairScore(yourResult);
+    const models = MODELS.map((m, mi) => ({ name: m.short || m.name, score: pairScore(modelResult(mi, pair)) }))
+      .filter((m) => m.score != null);
+    if (mine == null || !models.length) return { won: false, mine, models, best: null };
+    const beaten = models.filter((m) => mine > m.score);
+    const won = CONFIG.trophyRule === 'any' ? beaten.length > 0 : beaten.length === models.length;
+    const best = models.reduce((a, m) => (m.score > a.score ? m : a), models[0]);
+    return { won, mine, models, best };
+  }
+
   // ---------------------------------------------------------------------------
   // State (saved in this browser so a refresh doesn't lose progress)
   // ---------------------------------------------------------------------------
@@ -271,6 +297,7 @@
 
     $('counter').textContent = `Pair ${state.pos + 1} of ${state.order.length}`;
     renderProgress();
+    renderCabinet();
 
     if (state.checked && state.results[state.pos]) {
       showFeedback();
@@ -300,6 +327,43 @@
       li.title = label;
       ol.appendChild(li);
     });
+  }
+
+  let newTrophyPos = -1;   // the slot that should play the award animation once
+
+  function trophyList() {
+    return state.order.map((idx, i) => {
+      const r = state.results[i];
+      return r ? trophyFor(PAIRS[idx], r).won : false;
+    });
+  }
+
+  function fillShelf(shelf, won, currentPos) {
+    shelf.innerHTML = '';
+    won.forEach((w, i) => {
+      const li = document.createElement('li');
+      if (w) li.classList.add('is-won');
+      if (i === currentPos) li.classList.add('is-current');
+      if (i === newTrophyPos && w) li.classList.add('is-new');
+      li.innerHTML = `${TROPHY_SVG}<span class="slot-num">${i + 1}</span>`;
+      const label = `Pair ${i + 1}: ${w ? 'trophy won' : state.results[i] ? 'no trophy' : 'not played yet'}`;
+      li.setAttribute('aria-label', label);
+      li.title = label;
+      shelf.appendChild(li);
+    });
+  }
+
+  function renderCabinet() {
+    const cabinet = $('cabinet');
+    cabinet.hidden = !MODELS.length;
+    if (!MODELS.length) return;
+    const won = trophyList();
+    const count = won.filter(Boolean).length;
+    $('cabinet-count').innerHTML = `<b>${count}</b> of ${won.length}`;
+    fillShelf($('shelf'), won, state.pos);
+    $('cabinet-rule').textContent = CONFIG.trophyRule === 'any'
+      ? 'Score higher than at least one AI model on a pair to win its trophy.'
+      : 'Score higher than every AI model on a pair to win its trophy.';
   }
 
   function updateButtons() {
@@ -478,51 +542,74 @@
     state.checked = true;
     viewing = 'you';
     save();
+    newTrophyPos = trophyFor(pair, state.results[state.pos]).won ? state.pos : -1;
     renderProgress();
+    renderCabinet();
+    newTrophyPos = -1;
     showFeedback();
     drawOverlays();
     $('btn-next').focus({ preventScroll: true });
   }
 
-  function foundText(r) {
-    return `${r.tp}/${r.tp + r.fn}`;
+  function cardDetail(r) {
+    return `<span class="sc-detail">Found ${r.tp}/${r.tp + r.fn}, ${r.fp} wrong</span>` +
+      `<span class="sc-detail">Accuracy ${pct(r.accuracy)}</span>` +
+      `<span class="sc-detail">IoU ${dec(r.meanIou)}</span>`;
   }
 
-  function renderPairTable() {
+  function renderPairCards() {
     const players = pairPlayers();
-    const table = $('pair-table');
-    table.innerHTML = '<thead><tr><th scope="col">Who</th><th scope="col" class="num">Found</th><th scope="col" class="num" title="Boxes with no difference under them">Wrong</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">IoU</th></tr></thead>';
-    const tbody = document.createElement('tbody');
+    const pair = currentPair();
+    const trophy = trophyFor(pair, state.results[state.pos]);
+    const wrap = $('pair-cards');
+    wrap.innerHTML = '';
     players.forEach((p) => {
-      const tr = document.createElement('tr');
       const r = p.result;
-      if (p.key === 'you') tr.classList.add('is-you');
-      if (!r) tr.classList.add('is-disabled');
-      if (p.key === viewing) tr.classList.add('is-selected');
-      tr.innerHTML = `<th scope="row"><button type="button" class="pick-btn"></button></th>` +
-        (r
-          ? `<td class="num">${foundText(r)}</td><td class="num">${r.fp}</td><td class="num">${pct(r.accuracy)}</td><td class="num">${dec(r.meanIou)}</td>`
-          : '<td class="num" colspan="4">No answer for this pair</td>');
-      const btn = tr.querySelector('.pick-btn');
-      btn.textContent = p.short;
-      btn.title = p.name;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `score-card${p.key === 'you' ? ' is-you' : ''}`;
       btn.setAttribute('aria-pressed', p.key === viewing ? 'true' : 'false');
-      btn.setAttribute('aria-label', `Show ${p.key === 'you' ? 'your' : `${p.name}’s`} boxes`);
-      if (!r) btn.disabled = true;
-      else tr.addEventListener('click', () => select(p.key));
-      tbody.appendChild(tr);
+      btn.title = p.name;
+      btn.innerHTML = `<span class="sc-name"><span class="sc-label"></span>${p.key === 'you' && trophy.won ? TROPHY_SVG : ''}</span>` +
+        (r ? `<span class="sc-score">${fmtScore(pairScore(r))}</span>${cardDetail(r)}`
+           : '<span class="sc-score">–</span><span class="sc-detail">No answer for this pair</span>');
+      btn.querySelector('.sc-label').textContent = p.short;
+      if (r) btn.addEventListener('click', () => select(p.key));
+      else btn.disabled = true;
+      wrap.appendChild(btn);
     });
-    table.appendChild(tbody);
     $('pick-hint').hidden = players.length < 2;
+  }
+
+  function renderAward() {
+    const award = $('award');
+    const t = trophyFor(currentPair(), state.results[state.pos]);
+    if (!MODELS.length || !t.models.length) { award.hidden = true; return; }
+    award.hidden = false;
+    award.classList.toggle('is-won', t.won);
+    let text;
+    if (t.won) {
+      text = CONFIG.trophyRule === 'any'
+        ? `Trophy won! You scored ${t.mine} and beat at least one AI model.`
+        : `Trophy won! Your ${t.mine} beat every AI model on this pair.`;
+    } else if (CONFIG.trophyRule === 'any') {
+      text = `No trophy this time. Every AI model scored at least ${t.mine}.`;
+    } else if (t.best.score === t.mine) {
+      text = `No trophy this time. You tied with ${t.best.name} at ${t.mine}. Beat it to win one.`;
+    } else {
+      text = `No trophy this time. ${t.best.name} scored ${t.best.score}, you scored ${t.mine}.`;
+    }
+    award.innerHTML = `${TROPHY_SVG}<span></span>`;
+    award.querySelector('span').textContent = text;
   }
 
   function select(key) {
     if (viewing === key) return;
     viewing = key;
-    renderPairTable();
+    renderPairCards();
     renderFindings();
     drawOverlays();
-    const btn = $('pair-table').querySelector('tr.is-selected .pick-btn');
+    const btn = $('pair-cards').querySelector('[aria-pressed="true"]');
     if (btn) btn.focus({ preventScroll: true });
   }
 
@@ -562,7 +649,8 @@
   function showFeedback() {
     canvases.forEach((c) => c.classList.add('is-locked'));
     $('controls').hidden = true;
-    renderPairTable();
+    renderAward();
+    renderPairCards();
     renderFindings();
     $('btn-next').textContent = state.pos + 1 >= state.order.length ? 'See results' : 'Next pair';
     $('feedback').hidden = false;
@@ -619,22 +707,25 @@
   }
 
   // players: [{ name, short, isYou, resultFor(pair) }]
-  function renderSummary(table, players, pairs) {
-    table.innerHTML = '<thead><tr><th scope="col">Who</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">Mean IoU</th><th scope="col" class="num">Precision</th><th scope="col" class="num">Recall</th><th scope="col" class="num">Solved</th></tr></thead>';
-    const tbody = document.createElement('tbody');
+  function renderOverallCards(wrap, players, pairs) {
+    wrap.innerHTML = '';
     players.forEach((p) => {
-      const s = summarise(pairs.map((pair) => p.resultFor(pair)));
-      const tr = document.createElement('tr');
-      if (p.isYou) tr.classList.add('is-you');
-      tr.innerHTML = '<th scope="row"></th>' + (s.pairs
-        ? `<td class="num">${pct(s.accuracy)}</td><td class="num">${dec(s.mean_iou)}</td><td class="num">${pct(s.precision)}</td><td class="num">${pct(s.recall)}</td><td class="num" title="Pairs solved">${s.pairs_solved}/${s.pairs}</td>`
-        : '<td class="num" colspan="5">No answers for these pairs</td>');
-      tr.firstChild.innerHTML = '<span class="name-long"></span><span class="name-short"></span>';
-      tr.firstChild.querySelector('.name-long').textContent = p.name;
-      tr.firstChild.querySelector('.name-short').textContent = p.short;
-      tbody.appendChild(tr);
+      const results = pairs.map((pair) => p.resultFor(pair)).filter(Boolean);
+      const s = summarise(results);
+      const score = results.length ? results.reduce((a, r) => a + pairScore(r), 0) / results.length : null;
+      const card = document.createElement('div');
+      card.className = `score-card${p.isYou ? ' is-you' : ''}`;
+      card.innerHTML = '<span class="sc-name"><span class="sc-label"></span></span>' + (s.pairs
+        ? `<span class="sc-score">${fmtScore(score)}</span>` +
+          `<span class="sc-detail">Accuracy ${pct(s.accuracy)}</span>` +
+          `<span class="sc-detail">Mean IoU ${dec(s.mean_iou)}</span>` +
+          `<span class="sc-detail">Precision ${pct(s.precision)}</span>` +
+          `<span class="sc-detail">Recall ${pct(s.recall)}</span>` +
+          `<span class="sc-detail">Solved ${s.pairs_solved} of ${s.pairs} pairs</span>`
+        : '<span class="sc-score">–</span><span class="sc-detail">No answers for these pairs</span>');
+      card.querySelector('.sc-label').textContent = p.name;
+      wrap.appendChild(card);
     });
-    table.appendChild(tbody);
   }
 
   function renderPairs(table, players, pairs) {
@@ -661,9 +752,12 @@
         const r = p.resultFor(pair);
         const td = document.createElement('td');
         td.className = 'num player';
+        const won = p.isYou && r && trophyFor(pair, r).won;
         td.innerHTML = r
-          ? `<span class="cell-acc is-${r.status}">${pct(r.accuracy)}</span><span class="cell-iou">IoU ${dec(r.meanIou)}</span>`
-          : '<span class="cell-iou">No answer</span>';
+          ? `<span class="cell-score is-${r.status}">${won ? TROPHY_SVG : ''}${fmtScore(pairScore(r))}</span>` +
+            `<span class="cell-sub"><span>${pct(r.accuracy)}</span><span class="cs-sep">, </span><span>IoU ${dec(r.meanIou)}</span></span>`
+          : '<span class="cell-sub">No answer</span>';
+        if (won) td.title = 'Trophy won';
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -687,17 +781,23 @@
     const wrongText = you.wrong_boxes === 0 ? 'and no wrong boxes' : you.wrong_boxes === 1 ? 'with 1 wrong box' : `with ${you.wrong_boxes} wrong boxes`;
     $('done-sentence').textContent = `You found ${you.found} of ${you.differences} differences, ${wrongText}.`;
 
+    const won = trophyList();
+    const count = won.filter(Boolean).length;
+    $('done-cabinet').hidden = !MODELS.length;
+    $('done-cabinet-count').innerHTML = `<b>${count}</b> of ${won.length}`;
+    fillShelf($('done-shelf'), won, -1);
+
     const donePairs = state.results.filter(Boolean).map((r) => pairById(r.pairId)).filter(Boolean);
     const byPair = new Map(state.results.filter(Boolean).map((r) => [r.pairId, r]));
     const players = [{ name: 'You', short: 'You', isYou: true, resultFor: (pair) => byPair.get(pair.id) || null }, ...modelPlayers()];
-    renderSummary($('done-summary'), players, donePairs);
+    renderOverallCards($('done-cards'), players, donePairs);
     renderPairs($('done-pairs'), players, donePairs);
     show('done');
   }
 
   function showModels() {
     $('models-lede').textContent = `Scored on the ${PAIRS.length} pairs on this site, with the same rules as players.`;
-    renderSummary($('models-summary'), modelPlayers(), PAIRS);
+    renderOverallCards($('models-cards'), modelPlayers(), PAIRS);
     renderPairs($('models-pairs'), modelPlayers(), PAIRS);
     show('models');
   }
@@ -724,6 +824,7 @@
       file_b: r.fileB,
       ...extra,
       result: r.status,
+      score: pairScore(r),
       accuracy: r.accuracy,
       mean_iou: r.meanIou,
       boxes: r.marks,
@@ -748,11 +849,22 @@
       finished_at: state.finishedAt,
       iou_threshold: CONFIG.iouThreshold,
       box_format: '[x, y, width, height] in original image pixels',
-      summary: summarise(done),
-      pairs: done.map((r) => pairExport(r, { image_width: r.width, image_height: r.height, time_ms: r.timeMs })),
+      trophy_rule: CONFIG.trophyRule,
+      summary: {
+        ...summarise(done),
+        score: done.length ? done.reduce((a, r) => a + pairScore(r), 0) / done.length : null,
+        trophies: done.filter((r) => trophyFor(pairById(r.pairId), r).won).length,
+      },
+      pairs: done.map((r) => pairExport(r, {
+        image_width: r.width,
+        image_height: r.height,
+        time_ms: r.timeMs,
+        trophy: trophyFor(pairById(r.pairId), r).won,
+      })),
       models: MODELS.map((m, mi) => {
         const rs = donePairs.map((pair) => modelResult(mi, pair)).filter(Boolean);
-        return { name: m.name, summary: summarise(rs), pairs: rs.map((r) => pairExport(r, {})) };
+        const score = rs.length ? rs.reduce((a, r) => a + pairScore(r), 0) / rs.length : null;
+        return { name: m.name, summary: { ...summarise(rs), score }, pairs: rs.map((r) => pairExport(r, {})) };
       }),
     };
   }
@@ -764,20 +876,22 @@
   }
 
   const CSV_HEAD = ['player', 'participant_id', 'pair_id', 'file_a', 'file_b', 'row_type', 'description', 'change_type',
-    'truth_x', 'truth_y', 'truth_w', 'truth_h', 'box_x', 'box_y', 'box_w', 'box_h', 'iou', 'found', 'time_ms'];
+    'truth_x', 'truth_y', 'truth_w', 'truth_h', 'box_x', 'box_y', 'box_w', 'box_h', 'iou', 'found', 'pair_score', 'trophy', 'time_ms'];
 
   function csvRows(player, participant, results) {
     const rows = [];
     results.filter(Boolean).forEach((r) => {
       const time = r.timeMs == null ? null : r.timeMs;
+      const score = pairScore(r);
+      const trophy = player === 'human' ? (trophyFor(pairById(r.pairId), r).won ? 1 : 0) : null;
       r.spots.forEach((s) => {
         const box = s.box >= 0 ? r.marks[s.box] : [null, null, null, null];
         rows.push([player, participant, r.pairId, r.fileA, r.fileB, 'difference', s.label, s.type,
-          ...s.bbox, ...box, s.iou.toFixed(4), s.found ? 1 : 0, time]);
+          ...s.bbox, ...box, s.iou.toFixed(4), s.found ? 1 : 0, score, trophy, time]);
       });
       r.wrong.forEach((mi) => {
         rows.push([player, participant, r.pairId, r.fileA, r.fileB, 'wrong_box', '', '',
-          null, null, null, null, ...r.marks[mi], 0, 0, time]);
+          null, null, null, null, ...r.marks[mi], 0, 0, score, trophy, time]);
       });
     });
     return rows;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <main class="shell">
@@ -41,52 +41,65 @@
     </section>
 
     <!-- Play -->
-    <section id="screen-play" class="screen" hidden aria-labelledby="play-title">
+    <section id="screen-play" class="screen play" hidden aria-labelledby="play-title">
       <header class="play-head">
-        <h1 id="play-title" class="play-title">Spot the difference</h1>
-        <p class="counter" id="counter" aria-live="polite"></p>
+        <div class="play-head-row">
+          <h1 id="play-title" class="play-title">Spot the difference</h1>
+          <p class="counter" id="counter" aria-live="polite"></p>
+        </div>
+        <ol class="progress" id="progress" aria-label="Progress"></ol>
       </header>
-      <ol class="progress" id="progress" aria-label="Progress"></ol>
 
-      <div class="pair" id="pair">
-        <figure class="frame">
-          <div class="canvas" data-side="a">
-            <img id="img-a" alt="Picture A" draggable="false">
-            <svg class="overlay" id="svg-a" aria-hidden="true"></svg>
-          </div>
-          <figcaption>A</figcaption>
-        </figure>
-        <figure class="frame">
-          <div class="canvas" data-side="b">
-            <img id="img-b" alt="Picture B" draggable="false">
-            <svg class="overlay" id="svg-b" aria-hidden="true"></svg>
-          </div>
-          <figcaption>B</figcaption>
-        </figure>
-      </div>
-
-      <div id="controls" class="controls">
-        <p class="hint" id="hint">Drag a box around each difference, on either picture. Tap a box to remove it.</p>
-        <div class="row">
-          <button type="button" class="btn" id="btn-undo">Undo</button>
-          <button type="button" class="btn" id="btn-clear">Clear</button>
-          <span class="spacer"></span>
-          <button type="button" class="btn btn-primary" id="btn-check">Check answer</button>
+      <aside class="cabinet" id="cabinet" aria-labelledby="cabinet-title">
+        <div class="cabinet-head">
+          <h2 class="cabinet-title" id="cabinet-title">Trophies</h2>
+          <p class="cabinet-count" id="cabinet-count" aria-live="polite"></p>
         </div>
-      </div>
+        <ol class="shelf" id="shelf"></ol>
+        <p class="cabinet-rule" id="cabinet-rule"></p>
+      </aside>
 
-      <div id="feedback" class="feedback" hidden aria-live="polite">
-        <h2 class="section-title">Scores for this pair</h2>
-        <div class="table-wrap">
-          <table class="score-table pick-table" id="pair-table"></table>
+      <div class="play-main">
+        <div class="pair" id="pair">
+          <figure class="frame">
+            <div class="canvas" data-side="a">
+              <img id="img-a" alt="Picture A" draggable="false">
+              <svg class="overlay" id="svg-a" aria-hidden="true"></svg>
+            </div>
+            <figcaption>A</figcaption>
+          </figure>
+          <figure class="frame">
+            <div class="canvas" data-side="b">
+              <img id="img-b" alt="Picture B" draggable="false">
+              <svg class="overlay" id="svg-b" aria-hidden="true"></svg>
+            </div>
+            <figcaption>B</figcaption>
+          </figure>
         </div>
-        <p class="hint" id="pick-hint">Choose a row to see its boxes on the pictures.</p>
 
-        <h2 class="section-title" id="findings-title">Your boxes</h2>
-        <ul class="findings" id="findings"></ul>
-        <div class="row feedback-foot">
-          <span class="spacer"></span>
-          <button type="button" class="btn btn-primary" id="btn-next">Next pair</button>
+        <div id="controls" class="controls">
+          <p class="hint" id="hint">Drag a box around each difference, on either picture. Tap a box to remove it.</p>
+          <div class="row">
+            <button type="button" class="btn" id="btn-undo">Undo</button>
+            <button type="button" class="btn" id="btn-clear">Clear</button>
+            <span class="spacer"></span>
+            <button type="button" class="btn btn-primary" id="btn-check">Check answer</button>
+          </div>
+        </div>
+
+        <div id="feedback" class="feedback" hidden>
+          <p class="award" id="award" aria-live="polite"></p>
+
+          <h2 class="section-title">Scores for this pair</h2>
+          <div class="cards pick-cards" id="pair-cards"></div>
+          <p class="hint" id="pick-hint">Choose a score to see that player’s boxes on the pictures.</p>
+
+          <h2 class="section-title" id="findings-title">Your boxes</h2>
+          <ul class="findings" id="findings"></ul>
+          <div class="row feedback-foot">
+            <span class="spacer"></span>
+            <button type="button" class="btn btn-primary" id="btn-next">Next pair</button>
+          </div>
         </div>
       </div>
     </section>
@@ -96,10 +109,16 @@
       <h1 id="done-title" class="title">All pairs done</h1>
       <p class="lede" id="done-sentence"></p>
 
-      <h2 class="section-title">Overall</h2>
-      <div class="table-wrap">
-        <table class="score-table summary-table" id="done-summary"></table>
+      <div class="cabinet cabinet-wide" id="done-cabinet">
+        <div class="cabinet-head">
+          <h2 class="cabinet-title">Trophies</h2>
+          <p class="cabinet-count" id="done-cabinet-count"></p>
+        </div>
+        <ol class="shelf" id="done-shelf"></ol>
       </div>
+
+      <h2 class="section-title">Overall</h2>
+      <div class="cards" id="done-cards"></div>
 
       <h2 class="section-title">Pair by pair</h2>
       <div class="table-wrap">
@@ -121,9 +140,7 @@
       <p class="lede" id="models-lede"></p>
 
       <h2 class="section-title">Overall</h2>
-      <div class="table-wrap">
-        <table class="score-table summary-table" id="models-summary"></table>
-      </div>
+      <div class="cards" id="models-cards"></div>
 
       <h2 class="section-title">Pair by pair</h2>
       <div class="table-wrap">
@@ -140,14 +157,16 @@
       <p><strong>IoU</strong> (intersection over union) measures how well a box lines up with a true difference: the overlapping area divided by the area the two boxes cover together. 1.0 is a perfect fit, 0 is no overlap.</p>
       <p>Each box can be paired with at most one difference. A difference counts as <strong>found</strong> when a box overlaps it with an IoU of at least <span class="threshold"></span>. A box that isn’t paired with any difference is a <strong>wrong box</strong>.</p>
       <p><strong>Accuracy</strong> = found ÷ (found + missed + wrong boxes). <strong>Mean IoU</strong> averages, over every true difference, the IoU of its paired box, or of the closest box if it was missed. <strong>Precision</strong> = found ÷ all boxes. <strong>Recall</strong> = found ÷ all differences.</p>
+      <p><strong>Score</strong> = accuracy × mean IoU, out of 100. It rewards finding every difference, not adding wrong boxes, and drawing boxes that fit. The overall score is the average of the pair scores.</p>
+      <p>You win a <strong>trophy</strong> on a pair when your score is higher than every AI model’s score on that pair. A tie doesn’t count.</p>
       <p>When an icon moves, its old spot and its new spot are scored as two separate differences.</p>
       <p>The AI models are scored with exactly the same rules. A model marks a changed icon once in each picture; when both of its boxes are on the same spot they are merged into one box covering both, the way a player draws one box.</p>
     </details>
 
   </main>
 
-  <script src="data/pairs.js?v=2"></script>
-  <script src="data/models.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="data/pairs.js?v=3"></script>
+  <script src="data/models.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

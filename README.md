@@ -46,6 +46,7 @@ At the top of `app.js`:
 - `iouThreshold` (default `0.3`): the IoU a box needs to count as finding a difference. The ground-truth boxes are 24×24 cells with padding around each icon, so a box drawn tightly around the visible icon only reaches about 0.31 to 0.80 IoU. At the common 0.5 cut-off, correct but tight boxes would count as missed on several pairs (for example the "5" in pair_0007 and the U/V in pair_0009).
 - `shuffle` (default `false`): set to `true` to show the pairs in a random order each session.
 - `showModelsAfterEachPair` (default `true`): show the models' scores and boxes after each answer. Set to `false` if you're collecting human results and don't want players to see the models' answers.
+- `trophyRule` (default `'all'`): a player wins a pair's trophy when their score beats every AI model's score on that pair. Set to `'any'` to award it for beating at least one model.
 - `showModelsLink` (default `true`): show the "See how the AI models scored" link on the start screen. That page lists what changed in every pair, so turn it off for a study.
 
 ## AI model scores
@@ -71,6 +72,8 @@ Then commit the updated `data/models.js`.
 - **Accuracy** = found ÷ (found + missed + wrong boxes).
 - **Mean IoU** = average over all true differences of the matched box's IoU (or the closest box's IoU if missed, 0 if no box touched it).
 - **Precision** = found ÷ all boxes. **Recall** = found ÷ all differences.
+- **Score** = accuracy × mean IoU, out of 100, for each pair. The overall score is the average of the pair scores. Each player's score (you and every model) is shown on its own card after each pair and on the final screen.
+- **Trophies**: you win a pair's trophy when your score is higher than every AI model's score on that pair (a tie doesn't count). The trophy cabinet sits to the right of the pictures on desktop and above them on phones.
 - A moved icon (translation) is scored as two differences: its old spot and its new spot.
 
 ## Results
