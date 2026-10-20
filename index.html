@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Spot the difference</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+
+    <!-- Start -->
+    <section id="screen-start" class="screen" aria-labelledby="start-title">
+      <h1 id="start-title" class="title">Spot the difference</h1>
+      <p class="lede">Each round shows two pictures that are almost the same. Draw a box around every spot where they differ, then check your answer.</p>
+      <p class="lede muted" id="start-count"></p>
+
+      <div id="resume" class="resume" hidden>
+        <p>You have a session in progress, <span id="resume-detail"></span>.</p>
+        <div class="row">
+          <button type="button" class="btn btn-primary" id="btn-resume">Continue</button>
+          <button type="button" class="btn" id="btn-discard">Start over</button>
+        </div>
+      </div>
+
+      <form id="start-form" class="start-form">
+        <label for="participant">Name or participant ID <span class="muted">(optional)</span></label>
+        <input id="participant" name="participant" type="text" autocomplete="off" maxlength="60">
+        <button type="submit" class="btn btn-primary" id="btn-start">Start</button>
+      </form>
+
+      <p id="no-data" class="notice" hidden>No image pairs were found. Put your images in <code>images/</code> and run <code>python tools/build_pairs.py</code> to create <code>data/pairs.js</code>.</p>
+    </section>
+
+    <!-- Play -->
+    <section id="screen-play" class="screen" hidden aria-labelledby="play-title">
+      <header class="play-head">
+        <h1 id="play-title" class="play-title">Spot the difference</h1>
+        <p class="counter" id="counter" aria-live="polite"></p>
+      </header>
+      <ol class="progress" id="progress" aria-label="Progress"></ol>
+
+      <div class="pair" id="pair">
+        <figure class="frame">
+          <div class="canvas" data-side="a">
+            <img id="img-a" alt="Picture A" draggable="false">
+            <svg class="overlay" id="svg-a" aria-hidden="true"></svg>
+          </div>
+          <figcaption>A</figcaption>
+        </figure>
+        <figure class="frame">
+          <div class="canvas" data-side="b">
+            <img id="img-b" alt="Picture B" draggable="false">
+            <svg class="overlay" id="svg-b" aria-hidden="true"></svg>
+          </div>
+          <figcaption>B</figcaption>
+        </figure>
+      </div>
+
+      <div id="controls" class="controls">
+        <p class="hint" id="hint">Drag a box around each difference, on either picture. Tap a box to remove it.</p>
+        <div class="row">
+          <button type="button" class="btn" id="btn-undo">Undo</button>
+          <button type="button" class="btn" id="btn-clear">Clear</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-primary" id="btn-check">Check answer</button>
+        </div>
+      </div>
+
+      <div id="feedback" class="feedback" hidden aria-live="polite">
+        <ul class="findings" id="findings"></ul>
+        <div class="row feedback-foot">
+          <p class="pair-score" id="pair-score"></p>
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-primary" id="btn-next">Next pair</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Done -->
+    <section id="screen-done" class="screen" hidden aria-labelledby="done-title">
+      <h1 id="done-title" class="title">All pairs done</h1>
+      <p class="lede" id="done-sentence"></p>
+
+      <dl class="stats" id="stats"></dl>
+
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr><th scope="col">Pair</th><th scope="col">What changed</th><th scope="col">Result</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">IoU</th></tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="btn-json">Download results (JSON)</button>
+        <button type="button" class="btn" id="btn-csv">Download results (CSV)</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="btn-restart">Start again</button>
+      </div>
+
+      <details class="method">
+        <summary>How the scores are worked out</summary>
+        <p><strong>IoU</strong> (intersection over union) measures how well a box lines up with a true difference: the overlapping area divided by the area the two boxes cover together. 1.0 is a perfect fit, 0 is no overlap.</p>
+        <p>Each of your boxes can be paired with at most one difference. A difference counts as <strong>found</strong> when a box overlaps it with an IoU of at least <span class="threshold"></span>. A box that isn't paired with any difference is a <strong>wrong box</strong>.</p>
+        <p><strong>Accuracy</strong> = found ÷ (found + missed + wrong boxes). <strong>Mean IoU</strong> averages, over every true difference, the IoU of its paired box, or of your closest box if it was missed. <strong>Precision</strong> = found ÷ all your boxes. <strong>Recall</strong> = found ÷ all differences.</p>
+        <p>When an icon moves, its old spot and its new spot are scored as two separate differences.</p>
+      </details>
+    </section>
+
+  </main>
+
+  <script src="data/pairs.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
