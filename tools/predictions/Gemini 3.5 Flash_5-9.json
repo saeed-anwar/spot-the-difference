@@ -1,0 +1,218 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "pair_0005_a.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 5,
+      "pair_role": "A"
+    },
+    {
+      "id": 2,
+      "file_name": "pair_0005_b.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 5,
+      "pair_role": "B"
+    },
+    {
+      "id": 3,
+      "file_name": "pair_0006_a.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 6,
+      "pair_role": "A"
+    },
+    {
+      "id": 4,
+      "file_name": "pair_0006_b.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 6,
+      "pair_role": "B"
+    },
+    {
+      "id": 5,
+      "file_name": "pair_0007_a.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 7,
+      "pair_role": "A"
+    },
+    {
+      "id": 6,
+      "file_name": "pair_0007_b.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 7,
+      "pair_role": "B"
+    },
+    {
+      "id": 7,
+      "file_name": "pair_0008_a.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 8,
+      "pair_role": "A"
+    },
+    {
+      "id": 8,
+      "file_name": "pair_0008_b.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 8,
+      "pair_role": "B"
+    },
+    {
+      "id": 9,
+      "file_name": "pair_0009_a.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 9,
+      "pair_role": "A"
+    },
+    {
+      "id": 10,
+      "file_name": "pair_0009_b.png",
+      "width": 200,
+      "height": 200,
+      "pair_id": 9,
+      "pair_role": "B"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [88, 148, 28, 32],
+      "area": 896,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "substitution"
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [88, 148, 28, 32],
+      "area": 896,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "substitution"
+    },
+    {
+      "id": 3,
+      "image_id": 3,
+      "category_id": 3,
+      "bbox": [156, 144, 34, 22],
+      "area": 748,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 4,
+      "image_id": 4,
+      "category_id": 4,
+      "bbox": [158, 140, 26, 32],
+      "area": 832,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 5,
+      "image_id": 5,
+      "category_id": 5,
+      "bbox": [146, 154, 24, 28],
+      "area": 672,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "removal"
+    },
+    {
+      "id": 6,
+      "image_id": 7,
+      "category_id": 6,
+      "bbox": [148, 8, 30, 26],
+      "area": 780,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "substitution"
+    },
+    {
+      "id": 7,
+      "image_id": 8,
+      "category_id": 3,
+      "bbox": [136, 52, 34, 22],
+      "area": 748,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "substitution"
+    },
+    {
+      "id": 8,
+      "image_id": 9,
+      "category_id": 7,
+      "bbox": [98, 76, 24, 28],
+      "area": 672,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    },
+    {
+      "id": 9,
+      "image_id": 10,
+      "category_id": 8,
+      "bbox": [98, 76, 24, 28],
+      "area": 672,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "water drop outline",
+      "supercategory": "icon"
+    },
+    {
+      "id": 2,
+      "name": "water drop solid",
+      "supercategory": "icon"
+    },
+    {
+      "id": 3,
+      "name": "submarine",
+      "supercategory": "icon"
+    },
+    {
+      "id": 4,
+      "name": "microphone",
+      "supercategory": "icon"
+    },
+    {
+      "id": 5,
+      "name": "number 5",
+      "supercategory": "icon"
+    },
+    {
+      "id": 6,
+      "name": "tent",
+      "supercategory": "icon"
+    },
+    {
+      "id": 7,
+      "name": "letter u",
+      "supercategory": "icon"
+    },
+    {
+      "id": 8,
+      "name": "letter v",
+      "supercategory": "icon"
+    }
+  ]
+}

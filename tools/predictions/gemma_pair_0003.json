@@ -1,0 +1,59 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "0001_a.png",
+      "width": 300,
+      "height": 300,
+      "pair_id": 1,
+      "pair_role": "A"
+    },
+    {
+      "id": 2,
+      "file_name": "0001_b.png",
+      "width": 300,
+      "height": 300,
+      "pair_id": 1,
+      "pair_role": "B"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [
+        154,
+        38,
+        126,
+        119
+      ],
+      "area": 14964,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [
+        171,
+        125,
+        123,
+        118
+      ],
+      "area": 14361,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "icon",
+      "supercategory": "icon"
+    }
+  ]
+}

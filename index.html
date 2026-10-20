@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
   <main class="shell">
@@ -32,6 +32,10 @@
         <input id="participant" name="participant" type="text" autocomplete="off" maxlength="60">
         <button type="submit" class="btn btn-primary" id="btn-start">Start</button>
       </form>
+
+      <p class="models-link" id="models-link" hidden>
+        <button type="button" class="link-btn" id="btn-models">See how the AI models scored</button>
+      </p>
 
       <p id="no-data" class="notice" hidden>No image pairs were found. Put your images in <code>images/</code> and run <code>python tools/build_pairs.py</code> to create <code>data/pairs.js</code>.</p>
     </section>
@@ -72,9 +76,15 @@
       </div>
 
       <div id="feedback" class="feedback" hidden aria-live="polite">
+        <h2 class="section-title">Scores for this pair</h2>
+        <div class="table-wrap">
+          <table class="score-table pick-table" id="pair-table"></table>
+        </div>
+        <p class="hint" id="pick-hint">Choose a row to see its boxes on the pictures.</p>
+
+        <h2 class="section-title" id="findings-title">Your boxes</h2>
         <ul class="findings" id="findings"></ul>
         <div class="row feedback-foot">
-          <p class="pair-score" id="pair-score"></p>
           <span class="spacer"></span>
           <button type="button" class="btn btn-primary" id="btn-next">Next pair</button>
         </div>
@@ -86,15 +96,14 @@
       <h1 id="done-title" class="title">All pairs done</h1>
       <p class="lede" id="done-sentence"></p>
 
-      <dl class="stats" id="stats"></dl>
-
+      <h2 class="section-title">Overall</h2>
       <div class="table-wrap">
-        <table class="results-table">
-          <thead>
-            <tr><th scope="col">Pair</th><th scope="col">What changed</th><th scope="col">Result</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">IoU</th></tr>
-          </thead>
-          <tbody id="results-body"></tbody>
-        </table>
+        <table class="score-table summary-table" id="done-summary"></table>
+      </div>
+
+      <h2 class="section-title">Pair by pair</h2>
+      <div class="table-wrap">
+        <table class="results-table" id="done-pairs"></table>
       </div>
 
       <div class="row">
@@ -103,19 +112,42 @@
         <span class="spacer"></span>
         <button type="button" class="btn" id="btn-restart">Start again</button>
       </div>
-
-      <details class="method">
-        <summary>How the scores are worked out</summary>
-        <p><strong>IoU</strong> (intersection over union) measures how well a box lines up with a true difference: the overlapping area divided by the area the two boxes cover together. 1.0 is a perfect fit, 0 is no overlap.</p>
-        <p>Each of your boxes can be paired with at most one difference. A difference counts as <strong>found</strong> when a box overlaps it with an IoU of at least <span class="threshold"></span>. A box that isn't paired with any difference is a <strong>wrong box</strong>.</p>
-        <p><strong>Accuracy</strong> = found ÷ (found + missed + wrong boxes). <strong>Mean IoU</strong> averages, over every true difference, the IoU of its paired box, or of your closest box if it was missed. <strong>Precision</strong> = found ÷ all your boxes. <strong>Recall</strong> = found ÷ all differences.</p>
-        <p>When an icon moves, its old spot and its new spot are scored as two separate differences.</p>
-      </details>
     </section>
+
+    <!-- AI model scores -->
+    <section id="screen-models" class="screen" hidden aria-labelledby="models-title">
+      <p class="back"><button type="button" class="link-btn" id="btn-models-back">Back</button></p>
+      <h1 id="models-title" class="title">AI model scores</h1>
+      <p class="lede" id="models-lede"></p>
+
+      <h2 class="section-title">Overall</h2>
+      <div class="table-wrap">
+        <table class="score-table summary-table" id="models-summary"></table>
+      </div>
+
+      <h2 class="section-title">Pair by pair</h2>
+      <div class="table-wrap">
+        <table class="results-table" id="models-pairs"></table>
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn" id="btn-models-csv">Download model scores (CSV)</button>
+      </div>
+    </section>
+
+    <details class="method" id="method" hidden>
+      <summary>How the scores are worked out</summary>
+      <p><strong>IoU</strong> (intersection over union) measures how well a box lines up with a true difference: the overlapping area divided by the area the two boxes cover together. 1.0 is a perfect fit, 0 is no overlap.</p>
+      <p>Each box can be paired with at most one difference. A difference counts as <strong>found</strong> when a box overlaps it with an IoU of at least <span class="threshold"></span>. A box that isn’t paired with any difference is a <strong>wrong box</strong>.</p>
+      <p><strong>Accuracy</strong> = found ÷ (found + missed + wrong boxes). <strong>Mean IoU</strong> averages, over every true difference, the IoU of its paired box, or of the closest box if it was missed. <strong>Precision</strong> = found ÷ all boxes. <strong>Recall</strong> = found ÷ all differences.</p>
+      <p>When an icon moves, its old spot and its new spot are scored as two separate differences.</p>
+      <p>The AI models are scored with exactly the same rules. A model marks a changed icon once in each picture; when both of its boxes are on the same spot they are merged into one box covering both, the way a player draws one box.</p>
+    </details>
 
   </main>
 
-  <script src="data/pairs.js"></script>
-  <script src="app.js"></script>
+  <script src="data/pairs.js?v=2"></script>
+  <script src="data/models.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

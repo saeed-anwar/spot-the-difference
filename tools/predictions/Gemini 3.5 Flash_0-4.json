@@ -1,0 +1,243 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "pair_0000_a.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 0,
+      "pair_role": "a"
+    },
+    {
+      "id": 2,
+      "file_name": "pair_0000_b.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 0,
+      "pair_role": "b"
+    },
+    {
+      "id": 3,
+      "file_name": "pair_0001_a.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 1,
+      "pair_role": "a"
+    },
+    {
+      "id": 4,
+      "file_name": "pair_0001_b.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 1,
+      "pair_role": "b"
+    },
+    {
+      "id": 5,
+      "file_name": "pair_0002_a.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 2,
+      "pair_role": "a"
+    },
+    {
+      "id": 6,
+      "file_name": "pair_0002_b.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 2,
+      "pair_role": "b"
+    },
+    {
+      "id": 7,
+      "file_name": "pair_0003_a.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 3,
+      "pair_role": "a"
+    },
+    {
+      "id": 8,
+      "file_name": "pair_0003_b.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 3,
+      "pair_role": "b"
+    },
+    {
+      "id": 9,
+      "file_name": "pair_0004_a.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 4,
+      "pair_role": "a"
+    },
+    {
+      "id": 10,
+      "file_name": "pair_0004_b.png",
+      "width": 128,
+      "height": 128,
+      "pair_id": 4,
+      "pair_role": "b"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [60, 26, 16, 21],
+      "area": 336,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "removal"
+    },
+    {
+      "id": 2,
+      "image_id": 3,
+      "category_id": 6,
+      "bbox": [95, 75, 14, 15],
+      "area": 210,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "addition"
+    },
+    {
+      "id": 3,
+      "image_id": 5,
+      "category_id": 7,
+      "bbox": [98, 77, 21, 20],
+      "area": 420,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    },
+    {
+      "id": 4,
+      "image_id": 6,
+      "category_id": 8,
+      "bbox": [99, 78, 20, 18],
+      "area": 360,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    },
+    {
+      "id": 5,
+      "image_id": 7,
+      "category_id": 9,
+      "bbox": [20, 43, 18, 14],
+      "area": 252,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "translation"
+    },
+    {
+      "id": 6,
+      "image_id": 8,
+      "category_id": 9,
+      "bbox": [73, 44, 18, 14],
+      "area": 252,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "translation"
+    },
+    {
+      "id": 7,
+      "image_id": 9,
+      "category_id": 14,
+      "bbox": [58, 41, 22, 14],
+      "area": 308,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    },
+    {
+      "id": 8,
+      "image_id": 10,
+      "category_id": 15,
+      "bbox": [58, 41, 22, 16],
+      "area": 352,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "water drop",
+      "supercategory": "icon"
+    },
+    {
+      "id": 2,
+      "name": "house",
+      "supercategory": "icon"
+    },
+    {
+      "id": 3,
+      "name": "bread toast",
+      "supercategory": "icon"
+    },
+    {
+      "id": 4,
+      "name": "pencil",
+      "supercategory": "icon"
+    },
+    {
+      "id": 5,
+      "name": "capsule",
+      "supercategory": "icon"
+    },
+    {
+      "id": 6,
+      "name": "fire",
+      "supercategory": "icon"
+    },
+    {
+      "id": 7,
+      "name": "star",
+      "supercategory": "icon"
+    },
+    {
+      "id": 8,
+      "name": "diamond",
+      "supercategory": "icon"
+    },
+    {
+      "id": 9,
+      "name": "umbrella",
+      "supercategory": "icon"
+    },
+    {
+      "id": 10,
+      "name": "cat",
+      "supercategory": "icon"
+    },
+    {
+      "id": 11,
+      "name": "telephone",
+      "supercategory": "icon"
+    },
+    {
+      "id": 12,
+      "name": "anchor",
+      "supercategory": "icon"
+    },
+    {
+      "id": 13,
+      "name": "rounded square",
+      "supercategory": "icon"
+    },
+    {
+      "id": 14,
+      "name": "cloud",
+      "supercategory": "icon"
+    },
+    {
+      "id": 15,
+      "name": "rainy cloud",
+      "supercategory": "icon"
+    }
+  ]
+}

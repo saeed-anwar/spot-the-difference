@@ -1,0 +1,44 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "0001_a.png",
+      "width": 450,
+      "height": 300,
+      "pair_id": 1,
+      "pair_role": "A"
+    },
+    {
+      "id": 2,
+      "file_name": "0001_b.png",
+      "width": 450,
+      "height": 300,
+      "pair_id": 1,
+      "pair_role": "B"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [
+        187,
+        136,
+        59,
+        88
+      ],
+      "area": 5292,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "letter",
+      "supercategory": "icon"
+    }
+  ]
+}

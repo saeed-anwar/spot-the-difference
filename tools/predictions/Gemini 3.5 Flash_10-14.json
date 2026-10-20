@@ -1,0 +1,213 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "pair_0010_a.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 10,
+      "pair_role": "a"
+    },
+    {
+      "id": 2,
+      "file_name": "pair_0010_b.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 10,
+      "pair_role": "b"
+    },
+    {
+      "id": 3,
+      "file_name": "pair_0011_a.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 11,
+      "pair_role": "a"
+    },
+    {
+      "id": 4,
+      "file_name": "pair_0011_b.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 11,
+      "pair_role": "b"
+    },
+    {
+      "id": 5,
+      "file_name": "pair_0012_a.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 12,
+      "pair_role": "a"
+    },
+    {
+      "id": 6,
+      "file_name": "pair_0012_b.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 12,
+      "pair_role": "b"
+    },
+    {
+      "id": 7,
+      "file_name": "pair_0013_a.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 13,
+      "pair_role": "a"
+    },
+    {
+      "id": 8,
+      "file_name": "pair_0013_b.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 13,
+      "pair_role": "b"
+    },
+    {
+      "id": 9,
+      "file_name": "pair_0014_a.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 14,
+      "pair_role": "a"
+    },
+    {
+      "id": 10,
+      "file_name": "pair_0014_b.png",
+      "width": 150,
+      "height": 150,
+      "pair_id": 14,
+      "pair_role": "b"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [55, 110, 40, 45],
+      "area": 1800,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [55, 78, 40, 45],
+      "area": 1800,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    },
+    {
+      "id": 3,
+      "image_id": 3,
+      "category_id": 2,
+      "bbox": [10, 10, 42, 32],
+      "area": 1344,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 4,
+      "image_id": 4,
+      "category_id": 3,
+      "bbox": [10, 10, 42, 37],
+      "area": 1554,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 5,
+      "image_id": 5,
+      "category_id": 4,
+      "bbox": [103, 107, 36, 36],
+      "area": 1296,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    },
+    {
+      "id": 6,
+      "image_id": 6,
+      "category_id": 5,
+      "bbox": [103, 107, 36, 36],
+      "area": 1296,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    },
+    {
+      "id": 7,
+      "image_id": 7,
+      "category_id": 6,
+      "bbox": [65, 10, 32, 40],
+      "area": 1280,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "rotation"
+    },
+    {
+      "id": 8,
+      "image_id": 8,
+      "category_id": 6,
+      "bbox": [65, 10, 32, 40],
+      "area": 1280,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "rotation"
+    },
+    {
+      "id": 9,
+      "image_id": 9,
+      "category_id": 7,
+      "bbox": [80, 52, 28, 42],
+      "area": 1176,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "removal"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "compass",
+      "supercategory": "icon"
+    },
+    {
+      "id": 2,
+      "name": "cloud",
+      "supercategory": "icon"
+    },
+    {
+      "id": 3,
+      "name": "rainy_cloud",
+      "supercategory": "icon"
+    },
+    {
+      "id": 4,
+      "name": "trophy_outline",
+      "supercategory": "icon"
+    },
+    {
+      "id": 5,
+      "name": "trophy_filled",
+      "supercategory": "icon"
+    },
+    {
+      "id": 6,
+      "name": "number_1",
+      "supercategory": "icon"
+    },
+    {
+      "id": 7,
+      "name": "number_6",
+      "supercategory": "icon"
+    }
+  ]
+}

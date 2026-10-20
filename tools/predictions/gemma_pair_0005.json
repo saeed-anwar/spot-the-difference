@@ -1,0 +1,129 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "0001_a.png",
+      "width": 512,
+      "height": 512,
+      "pair_id": 1,
+      "pair_role": "A"
+    },
+    {
+      "id": 2,
+      "file_name": "0001_b.png",
+      "width": 512,
+      "height": 512,
+      "pair_id": 1,
+      "pair_role": "B"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 0,
+      "bbox": [
+        438,
+        69,
+        117,
+        117
+      ],
+      "area": 13689,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "substitution"
+    },
+    {
+      "id": 2,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [
+        50,
+        680,
+        100,
+        140
+      ],
+      "area": 1400,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 3,
+      "image_id": 1,
+      "category_id": 2,
+      "bbox": [
+        410,
+        790,
+        100,
+        150
+      ],
+      "area": 15000,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    },
+    {
+      "id": 4,
+      "image_id": 2,
+      "category_id": 0,
+      "bbox": [
+        438,
+        69,
+        117,
+        117
+      ],
+      "area": 13689,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "substitution"
+    },
+    {
+      "id": 5,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [
+        50,
+        680,
+        100,
+        140
+      ],
+      "area": 1400,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "substitution"
+    },
+    {
+      "id": 6,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [
+        410,
+        790,
+        100,
+        150
+      ],
+      "area": 15000,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "substitution"
+    }
+  ],
+  "categories": [
+    {
+      "id": 0,
+      "name": "signpost",
+      "supercategory": "icon"
+    },
+    {
+      "id": 1,
+      "name": "triangle",
+      "supercategory": "icon"
+    },
+    {
+      "id": 2,
+      "name": "droplet",
+      "supercategory": "icon"
+    }
+  ]
+}

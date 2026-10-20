@@ -11,11 +11,14 @@
     // would be marked as missed on several pairs; 0.3 accepts them.
     iouThreshold: 0.3,
     shuffle: false,      // true = show pairs in a random order for each session
+    showModelsAfterEachPair: true,  // show the AI models' scores and boxes after each answer
+    showModelsLink: true,           // show the "See how the AI models scored" link on the start screen
     minBoxSize: 2,       // boxes narrower or shorter than this (in picture pixels) are ignored
     storageKey: 'spot-the-difference:session:v1',
   };
 
   const PAIRS = Array.isArray(window.PAIRS) ? window.PAIRS : [];
+  const MODELS = Array.isArray(window.MODELS) ? window.MODELS : [];
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -115,10 +118,39 @@
   }
 
   // ---------------------------------------------------------------------------
+  // AI models (scored on the fly with the same rules as players)
+  // ---------------------------------------------------------------------------
+  const stemOf = (pair) => pair.a.split('/').pop().replace(/_a\.\w+$/i, '');
+  const pairById = (id) => PAIRS.find((p) => p.id === id);
+  const modelCache = new Map();
+
+  function modelResult(mi, pair) {
+    const key = `${mi}:${pair.id}`;
+    if (modelCache.has(key)) return modelCache.get(key);
+    const boxes = MODELS[mi] && MODELS[mi].pairs ? MODELS[mi].pairs[stemOf(pair)] : null;
+    let result = null;
+    if (Array.isArray(boxes)) {
+      const marks = boxes.map((b) => b.slice());
+      result = {
+        pairId: pair.id,
+        fileA: pair.a.split('/').pop(),
+        fileB: pair.b.split('/').pop(),
+        width: pair.width,
+        height: pair.height,
+        marks,
+        ...scorePair(marks, spotsFor(pair), CONFIG.iouThreshold),
+      };
+    }
+    modelCache.set(key, result);
+    return result;
+  }
+
+  // ---------------------------------------------------------------------------
   // State (saved in this browser so a refresh doesn't lose progress)
   // ---------------------------------------------------------------------------
   const pairIds = PAIRS.map((p) => p.id);
   let state = null;
+  let viewing = 'you';   // whose boxes are drawn after checking: 'you' or a model index
 
   function freshState(participant) {
     const order = PAIRS.map((_, i) => i);
@@ -164,9 +196,10 @@
   // ---------------------------------------------------------------------------
   // Screens
   // ---------------------------------------------------------------------------
-  const screens = { start: $('screen-start'), play: $('screen-play'), done: $('screen-done') };
+  const screens = { start: $('screen-start'), play: $('screen-play'), done: $('screen-done'), models: $('screen-models') };
   function show(name) {
     Object.entries(screens).forEach(([k, el]) => { el.hidden = k !== name; });
+    $('method').hidden = !(name === 'done' || name === 'models');
     window.scrollTo(0, 0);
   }
 
@@ -178,6 +211,7 @@
       return;
     }
     $('start-count').textContent = `There are ${PAIRS.length} pairs. It takes a few minutes.`;
+    $('models-link').hidden = !(CONFIG.showModelsLink && MODELS.length);
     const saved = loadSaved();
     if (saved && !saved.finishedAt && (saved.pos > 0 || saved.marks.length || saved.checked)) {
       $('resume').hidden = false;
@@ -222,6 +256,7 @@
     const pair = currentPair();
     const w = pair.width || 128;
     const h = pair.height || 128;
+    viewing = 'you';
     canvases.forEach((c) => { c.style.aspectRatio = `${w} / ${h}`; });
     [svgA, svgB].forEach((svg) => {
       svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
@@ -238,7 +273,7 @@
     renderProgress();
 
     if (state.checked && state.results[state.pos]) {
-      showFeedback(state.results[state.pos]);
+      showFeedback();
     } else {
       state.checked = false;
       $('controls').hidden = false;
@@ -350,31 +385,55 @@
     return `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
   }
 
-  function tag(box, text, cls, pair, scale) {
+  function tag(box, text, cls, pair, scale, right) {
     const size = 20 / scale;
     const font = 13 / scale;
-    const [x, y, , h] = box;
-    let ty = y - size - 1 / scale;
-    if (ty < 0) ty = Math.min(y + h + 1 / scale, pair.height - size);
+    const [bx, y, w, h] = box;
+    // Difference numbers sit above the top-left corner; wrong-box marks below the bottom-right,
+    // so the two never cover each other.
+    const x = right ? bx + w - size : bx;
+    let ty;
+    if (right) {
+      ty = y + h + 1 / scale;
+      if (ty + size > pair.height) ty = Math.max(0, y - size - 1 / scale);
+    } else {
+      ty = y - size - 1 / scale;
+      if (ty < 0) ty = Math.min(y + h + 1 / scale, pair.height - size);
+    }
     const tx = clamp(x, 0, pair.width - size);
     return `<rect class="ov-tag-bg ${cls}" x="${tx}" y="${ty}" width="${size}" height="${size}" rx="${3 / scale}"/>` +
       `<text class="ov-tag" x="${tx + size / 2}" y="${ty + size / 2}" font-size="${font}" text-anchor="middle" dominant-baseline="central">${text}</text>`;
   }
 
+  // The players shown in the score table for the current pair: you, then each model.
+  function pairPlayers() {
+    const pair = currentPair();
+    const list = [{ key: 'you', name: 'You', short: 'You', result: state.results[state.pos] }];
+    if (CONFIG.showModelsAfterEachPair) {
+      MODELS.forEach((m, mi) => list.push({ key: mi, name: m.name, short: m.short || m.name, result: modelResult(mi, pair) }));
+    }
+    return list;
+  }
+
+  function viewedResult() {
+    const p = pairPlayers().find((x) => x.key === viewing);
+    return p && p.result ? p.result : state.results[state.pos];
+  }
+
   function drawOverlays() {
-    if (!state) return;
+    if (!state || state.pos >= state.order.length) return;
     const pair = currentPair();
     const width = svgA.getBoundingClientRect().width || 1;
     const scale = width / pair.width;
     let html = '';
 
-    const result = state.checked ? state.results[state.pos] : null;
+    const result = state.checked ? viewedResult() : null;
     if (result) {
       const wrongSet = new Set(result.wrong);
       result.spots.forEach((s) => { html += rect(s.bbox, `ov-truth ${s.found ? 'is-right' : 'is-missed'}`); });
       result.marks.forEach((m, i) => { html += rect(m, `ov-mark ${wrongSet.has(i) ? 'is-wrong' : 'is-right'}`); });
       result.spots.forEach((s, i) => { html += tag(s.bbox, String(i + 1), s.found ? 'is-right' : 'is-missed', pair, scale); });
-      result.wrong.forEach((mi) => { html += tag(result.marks[mi], '×', 'is-wrong', pair, scale); });
+      result.wrong.forEach((mi) => { html += tag(result.marks[mi], '×', 'is-wrong', pair, scale, true); });
     } else {
       state.marks.forEach((m) => { html += rect(m, 'ov-mark'); });
       if (drag && drag.moved) html += rect(dragBox(drag), 'ov-draft');
@@ -406,7 +465,7 @@
     const pair = currentPair();
     const marks = state.marks.map((m) => m.slice());
     const scored = scorePair(marks, spotsFor(pair), CONFIG.iouThreshold);
-    const result = {
+    state.results[state.pos] = {
       pairId: pair.id,
       fileA: pair.a.split('/').pop(),
       fileB: pair.b.split('/').pop(),
@@ -416,19 +475,64 @@
       marks,
       ...scored,
     };
-    state.results[state.pos] = result;
     state.checked = true;
+    viewing = 'you';
     save();
     renderProgress();
-    showFeedback(result);
+    showFeedback();
     drawOverlays();
+    $('btn-next').focus({ preventScroll: true });
   }
 
-  function showFeedback(result) {
-    canvases.forEach((c) => c.classList.add('is-locked'));
-    $('controls').hidden = true;
+  function foundText(r) {
+    return `${r.tp}/${r.tp + r.fn}`;
+  }
+
+  function renderPairTable() {
+    const players = pairPlayers();
+    const table = $('pair-table');
+    table.innerHTML = '<thead><tr><th scope="col">Who</th><th scope="col" class="num">Found</th><th scope="col" class="num" title="Boxes with no difference under them">Wrong</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">IoU</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+    players.forEach((p) => {
+      const tr = document.createElement('tr');
+      const r = p.result;
+      if (p.key === 'you') tr.classList.add('is-you');
+      if (!r) tr.classList.add('is-disabled');
+      if (p.key === viewing) tr.classList.add('is-selected');
+      tr.innerHTML = `<th scope="row"><button type="button" class="pick-btn"></button></th>` +
+        (r
+          ? `<td class="num">${foundText(r)}</td><td class="num">${r.fp}</td><td class="num">${pct(r.accuracy)}</td><td class="num">${dec(r.meanIou)}</td>`
+          : '<td class="num" colspan="4">No answer for this pair</td>');
+      const btn = tr.querySelector('.pick-btn');
+      btn.textContent = p.short;
+      btn.title = p.name;
+      btn.setAttribute('aria-pressed', p.key === viewing ? 'true' : 'false');
+      btn.setAttribute('aria-label', `Show ${p.key === 'you' ? 'your' : `${p.name}’s`} boxes`);
+      if (!r) btn.disabled = true;
+      else tr.addEventListener('click', () => select(p.key));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    $('pick-hint').hidden = players.length < 2;
+  }
+
+  function select(key) {
+    if (viewing === key) return;
+    viewing = key;
+    renderPairTable();
+    renderFindings();
+    drawOverlays();
+    const btn = $('pair-table').querySelector('tr.is-selected .pick-btn');
+    if (btn) btn.focus({ preventScroll: true });
+  }
+
+  function renderFindings() {
+    const player = pairPlayers().find((p) => p.key === viewing) || pairPlayers()[0];
+    const result = player.result;
+    $('findings-title').textContent = player.key === 'you' ? 'Your boxes' : `${player.name}’s boxes`;
     const ul = $('findings');
     ul.innerHTML = '';
+    if (!result) return;
 
     result.spots.forEach((s, i) => {
       const li = document.createElement('li');
@@ -438,9 +542,9 @@
       else if (s.iou > 0) note = `Closest box: IoU ${dec(s.iou)}, needs ${CONFIG.iouThreshold.toFixed(2)}`;
       else note = 'No box on it';
       li.innerHTML = `<span class="tag ${status}">${i + 1}</span>` +
-        `<span class="finding-text"></span>` +
-        `<span class="finding-status ${status}">${s.found ? 'Found' : 'Missed'}<span class="finding-note"></span></span>`;
-      li.querySelector('.finding-text').textContent = s.label;
+        '<span class="finding-text"><span class="finding-label"></span><span class="finding-note"></span></span>' +
+        `<span class="finding-status ${status}">${s.found ? 'Found' : 'Missed'}</span>`;
+      li.querySelector('.finding-label').textContent = s.label;
       li.querySelector('.finding-note').textContent = note;
       ul.appendChild(li);
     });
@@ -448,16 +552,20 @@
     if (result.wrong.length) {
       const li = document.createElement('li');
       const n = result.wrong.length;
-      li.innerHTML = `<span class="tag is-wrong">×</span>` +
+      li.innerHTML = '<span class="tag is-wrong">×</span>' +
         `<span class="finding-text">${n === 1 ? 'A box with no difference under it' : `${n} boxes with no difference under them`}</span>` +
         `<span class="finding-status is-wrong">${n === 1 ? 'Wrong box' : 'Wrong boxes'}</span>`;
       ul.appendChild(li);
     }
+  }
 
-    $('pair-score').innerHTML = `Accuracy <b>${pct(result.accuracy)}</b>&emsp;Mean IoU <b>${dec(result.meanIou)}</b>`;
+  function showFeedback() {
+    canvases.forEach((c) => c.classList.add('is-locked'));
+    $('controls').hidden = true;
+    renderPairTable();
+    renderFindings();
     $('btn-next').textContent = state.pos + 1 >= state.order.length ? 'See results' : 'Next pair';
     $('feedback').hidden = false;
-    $('btn-next').focus({ preventScroll: true });
   }
 
   function next() {
@@ -487,10 +595,10 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Results
+  // Results tables
   // ---------------------------------------------------------------------------
-  function summarise() {
-    const rs = state.results.filter(Boolean);
+  function summarise(results) {
+    const rs = results.filter(Boolean);
     const found = rs.reduce((a, r) => a + r.tp, 0);
     const missed = rs.reduce((a, r) => a + r.fn, 0);
     const wrong = rs.reduce((a, r) => a + r.fp, 0);
@@ -510,41 +618,92 @@
     };
   }
 
+  // players: [{ name, short, isYou, resultFor(pair) }]
+  function renderSummary(table, players, pairs) {
+    table.innerHTML = '<thead><tr><th scope="col">Who</th><th scope="col" class="num">Accuracy</th><th scope="col" class="num">Mean IoU</th><th scope="col" class="num">Precision</th><th scope="col" class="num">Recall</th><th scope="col" class="num">Solved</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+    players.forEach((p) => {
+      const s = summarise(pairs.map((pair) => p.resultFor(pair)));
+      const tr = document.createElement('tr');
+      if (p.isYou) tr.classList.add('is-you');
+      tr.innerHTML = '<th scope="row"></th>' + (s.pairs
+        ? `<td class="num">${pct(s.accuracy)}</td><td class="num">${dec(s.mean_iou)}</td><td class="num">${pct(s.precision)}</td><td class="num">${pct(s.recall)}</td><td class="num" title="Pairs solved">${s.pairs_solved}/${s.pairs}</td>`
+        : '<td class="num" colspan="5">No answers for these pairs</td>');
+      tr.firstChild.innerHTML = '<span class="name-long"></span><span class="name-short"></span>';
+      tr.firstChild.querySelector('.name-long').textContent = p.name;
+      tr.firstChild.querySelector('.name-short').textContent = p.short;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+  }
+
+  function renderPairs(table, players, pairs) {
+    const head = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['Pair', ...players.map((p) => p.short)].forEach((label, i) => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      if (i >= 1) { th.className = 'num'; th.title = players[i - 1].name; }
+      hr.appendChild(th);
+    });
+    head.appendChild(hr);
+    const tbody = document.createElement('tbody');
+    pairs.forEach((pair) => {
+      const tr = document.createElement('tr');
+      const tdPair = document.createElement('th');
+      tdPair.scope = 'row';
+      tdPair.innerHTML = '<span class="pair-what"></span><span class="pair-id"></span>';
+      tdPair.querySelector('.pair-what').textContent = pair.differences.map(describe).join('; ');
+      tdPair.querySelector('.pair-id').textContent = stemOf(pair);
+      tr.append(tdPair);
+      players.forEach((p) => {
+        const r = p.resultFor(pair);
+        const td = document.createElement('td');
+        td.className = 'num player';
+        td.innerHTML = r
+          ? `<span class="cell-acc is-${r.status}">${pct(r.accuracy)}</span><span class="cell-iou">IoU ${dec(r.meanIou)}</span>`
+          : '<span class="cell-iou">No answer</span>';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.innerHTML = '';
+    table.append(head, tbody);
+  }
+
+  const modelPlayers = () => MODELS.map((m, mi) => ({
+    name: m.name,
+    short: m.short || m.name,
+    isYou: false,
+    resultFor: (pair) => modelResult(mi, pair),
+  }));
+
   function finish() {
     if (!state.finishedAt) state.finishedAt = new Date().toISOString();
     state.pos = state.order.length;
     save();
-    const s = summarise();
+    const you = summarise(state.results);
+    const wrongText = you.wrong_boxes === 0 ? 'and no wrong boxes' : you.wrong_boxes === 1 ? 'with 1 wrong box' : `with ${you.wrong_boxes} wrong boxes`;
+    $('done-sentence').textContent = `You found ${you.found} of ${you.differences} differences, ${wrongText}.`;
 
-    const wrongText = s.wrong_boxes === 0 ? 'and no wrong boxes' : s.wrong_boxes === 1 ? 'with 1 wrong box' : `with ${s.wrong_boxes} wrong boxes`;
-    $('done-sentence').textContent = `You found ${s.found} of ${s.differences} differences, ${wrongText}.`;
-
-    const stats = [
-      ['Accuracy', pct(s.accuracy)],
-      ['Mean IoU', dec(s.mean_iou)],
-      ['Precision', pct(s.precision)],
-      ['Recall', pct(s.recall)],
-      ['Pairs solved', `${s.pairs_solved} of ${s.pairs}`],
-    ];
-    $('stats').innerHTML = stats.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
-
-    const tbody = $('results-body');
-    tbody.innerHTML = '';
-    state.results.forEach((r) => {
-      if (!r) return;
-      const pair = PAIRS.find((p) => p.id === r.pairId);
-      const changes = pair ? pair.differences.map(describe).join('; ') : '';
-      const resultText = r.status === 'solved' ? 'Solved' : r.status === 'partial' ? 'Partly' : 'Missed';
-      const cls = r.status === 'solved' ? 'is-right' : r.status === 'partial' ? 'is-partial' : 'is-missed';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td></td><td></td><td class="${cls}">${resultText}</td><td class="num">${pct(r.accuracy)}</td><td class="num">${dec(r.meanIou)}</td>`;
-      tr.children[0].textContent = r.fileA.replace(/_a\.\w+$/i, '');
-      tr.children[1].textContent = changes;
-      tbody.appendChild(tr);
-    });
-
+    const donePairs = state.results.filter(Boolean).map((r) => pairById(r.pairId)).filter(Boolean);
+    const byPair = new Map(state.results.filter(Boolean).map((r) => [r.pairId, r]));
+    const players = [{ name: 'You', short: 'You', isYou: true, resultFor: (pair) => byPair.get(pair.id) || null }, ...modelPlayers()];
+    renderSummary($('done-summary'), players, donePairs);
+    renderPairs($('done-pairs'), players, donePairs);
     show('done');
   }
+
+  function showModels() {
+    $('models-lede').textContent = `Scored on the ${PAIRS.length} pairs on this site, with the same rules as players.`;
+    renderSummary($('models-summary'), modelPlayers(), PAIRS);
+    renderPairs($('models-pairs'), modelPlayers(), PAIRS);
+    show('models');
+  }
+
+  $('btn-models').addEventListener('click', showModels);
+  $('btn-models-back').addEventListener('click', () => show('start'));
 
   $('btn-restart').addEventListener('click', () => {
     const participant = state ? state.participant : '';
@@ -555,36 +714,46 @@
     show('start');
   });
 
-  // ---- Downloads ----
+  // ---------------------------------------------------------------------------
+  // Downloads
+  // ---------------------------------------------------------------------------
+  function pairExport(r, extra) {
+    return {
+      pair_id: r.pairId,
+      file_a: r.fileA,
+      file_b: r.fileB,
+      ...extra,
+      result: r.status,
+      accuracy: r.accuracy,
+      mean_iou: r.meanIou,
+      boxes: r.marks,
+      differences: r.spots.map((s) => ({
+        description: s.label,
+        change_type: s.type,
+        bbox: s.bbox,
+        found: s.found,
+        iou: s.iou,
+        box_index: s.box >= 0 ? s.box : null,
+      })),
+      wrong_box_indices: r.wrong,
+    };
+  }
+
   function exportObject() {
+    const done = state.results.filter(Boolean);
+    const donePairs = done.map((r) => pairById(r.pairId)).filter(Boolean);
     return {
       participant_id: state.participant || null,
       started_at: state.startedAt,
       finished_at: state.finishedAt,
       iou_threshold: CONFIG.iouThreshold,
       box_format: '[x, y, width, height] in original image pixels',
-      summary: summarise(),
-      pairs: state.results.filter(Boolean).map((r) => ({
-        pair_id: r.pairId,
-        file_a: r.fileA,
-        file_b: r.fileB,
-        image_width: r.width,
-        image_height: r.height,
-        time_ms: r.timeMs,
-        result: r.status,
-        accuracy: r.accuracy,
-        mean_iou: r.meanIou,
-        boxes: r.marks,
-        differences: r.spots.map((s) => ({
-          description: s.label,
-          change_type: s.type,
-          bbox: s.bbox,
-          found: s.found,
-          iou: s.iou,
-          box_index: s.box >= 0 ? s.box : null,
-        })),
-        wrong_box_indices: r.wrong,
-      })),
+      summary: summarise(done),
+      pairs: done.map((r) => pairExport(r, { image_width: r.width, image_height: r.height, time_ms: r.timeMs })),
+      models: MODELS.map((m, mi) => {
+        const rs = donePairs.map((pair) => modelResult(mi, pair)).filter(Boolean);
+        return { name: m.name, summary: summarise(rs), pairs: rs.map((r) => pairExport(r, {})) };
+      }),
     };
   }
 
@@ -594,40 +763,61 @@
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   }
 
-  function exportCsv() {
-    const head = ['participant_id', 'pair_id', 'file_a', 'file_b', 'row_type', 'description', 'change_type',
-      'truth_x', 'truth_y', 'truth_w', 'truth_h', 'box_x', 'box_y', 'box_w', 'box_h', 'iou', 'found', 'time_ms'];
-    const rows = [head];
-    state.results.filter(Boolean).forEach((r) => {
+  const CSV_HEAD = ['player', 'participant_id', 'pair_id', 'file_a', 'file_b', 'row_type', 'description', 'change_type',
+    'truth_x', 'truth_y', 'truth_w', 'truth_h', 'box_x', 'box_y', 'box_w', 'box_h', 'iou', 'found', 'time_ms'];
+
+  function csvRows(player, participant, results) {
+    const rows = [];
+    results.filter(Boolean).forEach((r) => {
+      const time = r.timeMs == null ? null : r.timeMs;
       r.spots.forEach((s) => {
         const box = s.box >= 0 ? r.marks[s.box] : [null, null, null, null];
-        rows.push([state.participant, r.pairId, r.fileA, r.fileB, 'difference', s.label, s.type,
-          ...s.bbox, ...box, s.iou.toFixed(4), s.found ? 1 : 0, r.timeMs]);
+        rows.push([player, participant, r.pairId, r.fileA, r.fileB, 'difference', s.label, s.type,
+          ...s.bbox, ...box, s.iou.toFixed(4), s.found ? 1 : 0, time]);
       });
       r.wrong.forEach((mi) => {
-        rows.push([state.participant, r.pairId, r.fileA, r.fileB, 'wrong_box', '', '',
-          null, null, null, null, ...r.marks[mi], 0, 0, r.timeMs]);
+        rows.push([player, participant, r.pairId, r.fileA, r.fileB, 'wrong_box', '', '',
+          null, null, null, null, ...r.marks[mi], 0, 0, time]);
       });
     });
-    return rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+    return rows;
   }
 
-  function download(text, type, ext) {
-    const who = (state.participant || 'anonymous').replace(/[^\w-]+/g, '_');
-    const stamp = (state.finishedAt || new Date().toISOString()).slice(0, 19).replace(/[:T]/g, '-');
+  const toCsv = (rows) => [CSV_HEAD, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+
+  function download(text, type, filename) {
     const blob = new Blob([text], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `spot-the-difference_${who}_${stamp}.${ext}`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  $('btn-json').addEventListener('click', () => download(JSON.stringify(exportObject(), null, 2), 'application/json', 'json'));
-  $('btn-csv').addEventListener('click', () => download(exportCsv(), 'text/csv', 'csv'));
+  function sessionFilename(ext) {
+    const who = (state.participant || 'anonymous').replace(/[^\w-]+/g, '_');
+    const stamp = (state.finishedAt || new Date().toISOString()).slice(0, 19).replace(/[:T]/g, '-');
+    return `spot-the-difference_${who}_${stamp}.${ext}`;
+  }
+
+  $('btn-json').addEventListener('click', () => {
+    download(JSON.stringify(exportObject(), null, 2), 'application/json', sessionFilename('json'));
+  });
+  $('btn-csv').addEventListener('click', () => {
+    const done = state.results.filter(Boolean);
+    const donePairs = done.map((r) => pairById(r.pairId)).filter(Boolean);
+    let rows = csvRows('human', state.participant, done);
+    MODELS.forEach((m, mi) => { rows = rows.concat(csvRows(m.name, '', donePairs.map((pair) => modelResult(mi, pair)))); });
+    download(toCsv(rows), 'text/csv', sessionFilename('csv'));
+  });
+  $('btn-models-csv').addEventListener('click', () => {
+    let rows = [];
+    MODELS.forEach((m, mi) => { rows = rows.concat(csvRows(m.name, '', PAIRS.map((pair) => modelResult(mi, pair)))); });
+    download(toCsv(rows), 'text/csv', `model-scores_${new Date().toISOString().slice(0, 10)}.csv`);
+  });
 
   // ---------------------------------------------------------------------------
   initStart();

@@ -1,0 +1,199 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "0001_a.png",
+      "width": 512,
+      "height": 512,
+      "pair_id": 1,
+      "pair_role": "A"
+    },
+    {
+      "id": 2,
+      "file_name": "0001_b.png",
+      "width": 512,
+      "height": 512,
+      "pair_id": 1,
+      "pair_role": "B"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 0,
+      "bbox": [
+        138,
+        194,
+        116,
+        157
+      ],
+      "area": 17912,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 0,
+      "bbox": [
+        138,
+        244,
+        116,
+        157
+      ],
+      "area": 17912,
+      "iscrowd": 0,
+      "icon_id": 0,
+      "change_type": "translation"
+    },
+    {
+      "id": 3,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [
+        401,
+        148,
+        155,
+        155
+      ],
+      "area": 23975,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "translation"
+    },
+    {
+      "id": 4,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [
+        401,
+        198,
+        155,
+        155
+      ],
+      "area": 23975,
+      "iscrowd": 0,
+      "icon_id": 1,
+      "change_type": "translation"
+    },
+    {
+      "id": 5,
+      "image_id": 1,
+      "category_id": 2,
+      "bbox": [
+        136,
+        384,
+        144,
+        133
+      ],
+      "area": 19248,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "translation"
+    },
+    {
+      "id": 6,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [
+        136,
+        384,
+        144,
+        133
+      ],
+      "area": 19248,
+      "iscrowd": 0,
+      "icon_id": 2,
+      "change_type": "translation"
+    },
+    {
+      "id": 7,
+      "image_id": 1,
+      "category_id": 3,
+      "bbox": [
+        425,
+        431,
+        156,
+        142
+      ],
+      "area": 22032,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "translation"
+    },
+    {
+      "id": 8,
+      "image_id": 2,
+      "category_id": 3,
+      "bbox": [
+        425,
+        431,
+        156,
+        142
+      ],
+      "area": 22032,
+      "iscrowd": 0,
+      "icon_id": 3,
+      "change_type": "translation"
+    },
+    {
+      "id": 9,
+      "image_id": 1,
+      "category_id": 4,
+      "bbox": [
+        788,
+        531,
+        111,
+        151
+      ],
+      "area": 16861,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    },
+    {
+      "id": 10,
+      "image_id": 2,
+      "category_id": 4,
+      "bbox": [
+        839,
+        531,
+        111,
+        151
+      ],
+      "area": 16861,
+      "iscrowd": 0,
+      "icon_id": 4,
+      "change_type": "substitution"
+    }
+  ],
+  "categories": [
+    {
+      "id": 0,
+      "name": "heart",
+      "supercategory": "icon"
+    },
+    {
+      "id": 1,
+      "name": "suitcase",
+      "supercategory": "icon"
+    },
+    {
+      "id": 2,
+      "name": "camera",
+      "supercategory": "icon"
+    },
+    {
+      "id": 3,
+      "name": "coffee",
+      "supercategory": "icon"
+    },
+    {
+      "id": 4,
+      "name": "plug",
+      "supercategory": "icon"
+    }
+  ]
+}
